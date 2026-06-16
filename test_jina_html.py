@@ -12,35 +12,39 @@ except ImportError:
     print("[WARNING] BeautifulSoup not installed. Run: pip install beautifulsoup4")
 
 
-def extract_heading(html: str) -> str:
-    """Extract equipment heading/title from HTML"""
+def extract_body_text(html: str, max_words: int = 100) -> str:
+    """Extract first N words of text from HTML body"""
     if not html:
-        return "No heading found"
+        return "No content found"
+    
+    text = ""
     
     if BS4_AVAILABLE:
         soup = BeautifulSoup(html, 'html.parser')
-        # Try h1 first, then h2, then title
-        for tag in ['h1', 'h2', 'title']:
-            element = soup.find(tag)
-            if element and element.get_text(strip=True):
-                return element.get_text(strip=True)
+        # Get text from body or entire document
+        body = soup.find('body')
+        if body:
+            text = body.get_text(separator=' ', strip=True)
+        else:
+            text = soup.get_text(separator=' ', strip=True)
     else:
-        # Simple string extraction as fallback
+        # Simple fallback - remove all HTML tags
         import re
-        # Look for <h1> or <title> tags
-        patterns = [
-            r'<h1[^>]*>(.*?)</h1>',
-            r'<h2[^>]*>(.*?)</h2>',
-            r'<title[^>]*>(.*?)</title>'
-        ]
-        for pattern in patterns:
-            match = re.search(pattern, html, re.IGNORECASE | re.DOTALL)
-            if match:
-                # Clean up HTML tags if any
-                text = re.sub(r'<[^>]+>', '', match.group(1))
-                return text.strip()[:100]  # Limit length
+        text = re.sub(r'<[^>]+>', ' ', html)
+        text = re.sub(r'\s+', ' ', text).strip()
     
-    return "No heading found"
+    # Clean up: remove extra whitespace and newlines
+    text = ' '.join(text.split())
+    
+    # Get first N words
+    words = text.split()
+    first_n_words = words[:max_words]
+    
+    result = ' '.join(first_n_words)
+    if len(words) > max_words:
+        result += "..."
+    
+    return result if result else "No text content"
 
 
 def test_get_jina_html():
@@ -57,8 +61,8 @@ def test_get_jina_html():
     
     if html:
         print(f"  SUCCESS! Got {len(html)} characters")
-        heading = extract_heading(html)
-        print(f"  Equipment: {heading}")
+        body_text = extract_body_text(html, max_words=100)
+        print(f"  First 100 words: {body_text}")
     else:
         print("  FAILED to get HTML")
     
@@ -68,8 +72,8 @@ def test_get_jina_html():
     
     if html_direct:
         print(f"  SUCCESS! Got {len(html_direct)} characters")
-        heading = extract_heading(html_direct)
-        print(f"  Equipment: {heading}")
+        body_text = extract_body_text(html_direct, max_words=100)
+        print(f"  First 100 words: {body_text}")
     else:
         print("  FAILED to get HTML")
     
@@ -79,10 +83,10 @@ def test_get_jina_html():
         html = get_jina_html(url, use_proxy=True)
         status = "OK" if html else "FAIL"
         size = len(html) if html else 0
-        heading = extract_heading(html) if html else "N/A"
+        body_text = extract_body_text(html, max_words=50) if html else "N/A"
         print(f"  Call {i}: {status} ({size} chars)")
-        if html and i == 1:  # Show heading from first successful call
-            print(f"    Equipment: {heading[:60]}...")
+        if html and i == 1:  # Show first 50 words from first successful call
+            print(f"    Preview: {body_text[:80]}...")
         time.sleep(0.5)
     
     print("\n" + "="*60)
