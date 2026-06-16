@@ -53,11 +53,11 @@ def test_get_jina_html():
     print("TEST: get_jina_html() Function")
     print("="*60)
     
-    # Test 1: Get HTML with proxy and extract heading
-    print("\n[TEST 1] Get HTML with proxy rotation:")
+    # Test 1: Get HTML (direct connection)
+    print("\n[TEST 1] Get HTML (direct):")
     url = "https://www.ironplanet.com/for-sale/Bucket-Trucks-2016-Altec-AM55E-56-ft-on-2016-Freightliner-M2-106-M2106-4x2-Bucket-Truck-Florida/15293435"
     
-    html = get_jina_html(url, use_proxy=True)
+    html = get_jina_html(url)
     
     if html:
         print(f"  SUCCESS! Got {len(html)} characters")
@@ -66,21 +66,10 @@ def test_get_jina_html():
     else:
         print("  FAILED to get HTML")
     
-    # Test 2: Get HTML without proxy (direct)
-    print("\n[TEST 2] Get HTML without proxy (direct):")
-    html_direct = get_jina_html(url, use_proxy=False)
-    
-    if html_direct:
-        print(f"  SUCCESS! Got {len(html_direct)} characters")
-        body_text = extract_body_text(html_direct, max_words=100)
-        print(f"  First 100 words: {body_text}")
-    else:
-        print("  FAILED to get HTML")
-    
-    # Test 3: Multiple calls with proxy rotation + extract headings
-    print("\n[TEST 3] Multiple calls with proxy rotation:")
+    # Test 2: Multiple calls (direct)
+    print("\n[TEST 2] Multiple calls (direct):")
     for i in range(1, 6):
-        html = get_jina_html(url, use_proxy=True)
+        html = get_jina_html(url)
         status = "OK" if html else "FAIL"
         size = len(html) if html else 0
         body_text = extract_body_text(html, max_words=50) if html else "N/A"
@@ -94,17 +83,18 @@ def test_get_jina_html():
 
 def test_custom_url():
     """Test with user-provided URL"""
-    print("\n[TEST 4] Custom URL test:")
+    print("\n[TEST 3] Custom URL test:")
     
     # You can change this URL
     test_url = "https://www.google.com"
     
     print(f"  Testing URL: {test_url}")
-    html = get_jina_html(test_url, use_proxy=True)
+    html = get_jina_html(test_url)
     
     if html:
         print(f"  SUCCESS! Got {len(html)} characters")
-        print(f"  First 100 chars: {html[:100]}...")
+        body_text = extract_body_text(html, max_words=50)
+        print(f"  First 50 words: {body_text}")
     else:
         print("  FAILED")
 

@@ -80,13 +80,12 @@ def make_request(url: str, proxy: Optional[str] = None) -> Optional[requests.Res
         return None
 
 
-def get_jina_html(target_url: str, use_proxy: bool = True) -> Optional[str]:
+def get_jina_html(target_url: str) -> Optional[str]:
     """
-    Call Jina AI API and return HTML response
+    Call Jina AI API and return HTML response (direct connection)
     
     Args:
         target_url: URL to extract HTML from (e.g., "https://example.com")
-        use_proxy: Whether to use proxy rotation (default: True)
     
     Returns:
         HTML content as string, or None if failed
@@ -99,14 +98,8 @@ def get_jina_html(target_url: str, use_proxy: bool = True) -> Optional[str]:
     # Build Jina API URL
     jina_url = f"https://r.jina.ai/{target_url}"
     
-    # Get proxy if requested
-    proxy = None
-    if use_proxy and len(PROXIES) > 1:
-        rotator = ProxyRotator(PROXIES)
-        proxy = rotator.get_next()
-    
-    # Make request
-    response = make_request(jina_url, proxy)
+    # Make direct request (no proxy)
+    response = make_request(jina_url, proxy=None)
     
     if response and response.status_code == 200:
         return response.text
