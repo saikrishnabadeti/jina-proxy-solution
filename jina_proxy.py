@@ -80,6 +80,42 @@ def make_request(url: str, proxy: Optional[str] = None) -> Optional[requests.Res
         return None
 
 
+def get_jina_html(target_url: str, use_proxy: bool = True) -> Optional[str]:
+    """
+    Call Jina AI API and return HTML response
+    
+    Args:
+        target_url: URL to extract HTML from (e.g., "https://example.com")
+        use_proxy: Whether to use proxy rotation (default: True)
+    
+    Returns:
+        HTML content as string, or None if failed
+    
+    Example:
+        html = get_jina_html("https://www.ironplanet.com/for-sale/...")
+        if html:
+            print(html[:500])  # Print first 500 chars
+    """
+    # Build Jina API URL
+    jina_url = f"https://r.jina.ai/{target_url}"
+    
+    # Get proxy if requested
+    proxy = None
+    if use_proxy and len(PROXIES) > 1:
+        rotator = ProxyRotator(PROXIES)
+        proxy = rotator.get_next()
+    
+    # Make request
+    response = make_request(jina_url, proxy)
+    
+    if response and response.status_code == 200:
+        return response.text
+    else:
+        status = response.status_code if response else "No response"
+        print(f"[ERROR] Failed to get HTML. Status: {status}")
+        return None
+
+
 def test_with_same_ip(num_requests: int = 30) -> Dict:
     """Test with same IP (no proxy rotation)"""
     print(f"\n{'='*60}")
@@ -158,6 +194,49 @@ def summarize(results: List[Dict]) -> Dict:
 
 
 # ============================================
+# TEST get_jina_html FUNCTION
+# ============================================
+
+def test_get_jina_html():
+    """Test the get_jina_html function with examples"""
+    print("="*60)
+    print("TEST: get_jina_html() Function")
+    print("="*60)
+    
+    # Test 1: Get HTML with proxy
+    print("\n[TEST 1] Get HTML with proxy rotation:")
+    url = "https://www.ironplanet.com/for-sale/Bucket-Trucks-2016-Altec-AM55E-56-ft-on-2016-Freightliner-M2-106-M2106-4x2-Bucket-Truck-Florida/15293435"
+    
+    html = get_jina_html(url, use_proxy=True)
+    
+    if html:
+        print(f"  SUCCESS! Got {len(html)} characters")
+        print(f"  First 200 chars: {html[:200]}...")
+    else:
+        print("  FAILED to get HTML")
+    
+    # Test 2: Get HTML without proxy (direct)
+    print("\n[TEST 2] Get HTML without proxy (direct):")
+    html_direct = get_jina_html(url, use_proxy=False)
+    
+    if html_direct:
+        print(f"  SUCCESS! Got {len(html_direct)} characters")
+    else:
+        print("  FAILED to get HTML")
+    
+    # Test 3: Multiple calls with proxy rotation
+    print("\n[TEST 3] Multiple calls with proxy rotation:")
+    for i in range(1, 6):
+        html = get_jina_html(url, use_proxy=True)
+        status = "OK" if html else "FAIL"
+        size = len(html) if html else 0
+        print(f"  Call {i}: {status} ({size} chars)")
+        time.sleep(0.5)
+    
+    print("\n" + "="*60)
+
+
+# ============================================
 # MAIN
 # ============================================
 
@@ -191,4 +270,11 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    
+    # Check for command line arguments
+    if len(sys.argv) > 1 and sys.argv[1] == "--test-html":
+        test_get_jina_html()
+    else:
+        main()
+        print("\n[Tip] Run with --test-html to test get_jina_html() function")
